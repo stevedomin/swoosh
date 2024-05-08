@@ -187,20 +187,16 @@ defmodule Swoosh.Adapters.Mua do
 
       disposition =
         if attachment.type == :inline do
-          ["inline", filename: filename]
+          [
+            content_disposition: ["inline", filename: filename],
+            content_id: "<#{attachment.cid || filename}>"
+          ]
         else
-          ["attachment", filename: filename]
-        end
-
-      cid =
-        if attachment.cid do
-          [content_id: attachment.cid]
-        else
-          []
+          [content_disposition: ["attachment", filename: filename]]
         end
 
       Mail.put_attachment(mail, {filename, data},
-        headers: [content_type: content_type, content_disposition: disposition] ++ cid
+        headers: [content_type: content_type] ++ disposition
       )
     end)
   end
