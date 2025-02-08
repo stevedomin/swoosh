@@ -100,7 +100,12 @@ defmodule Swoosh.Adapters.Mua do
   >
   >     config :mua, persistent_term: true
 
+  ## Inline Attachments
+
+  This adapter supports only regular attachments. Inline attachments will trigger a warning and be sent as regular files.
+
   """
+  require Logger
 
   use Swoosh.Adapter, required_deps: [mail: Mail, mua: Mua]
 
@@ -204,7 +209,14 @@ defmodule Swoosh.Adapters.Mua do
 
   defp put_attachments(mail, attachments) do
     Enum.reduce(attachments, mail, fn attachment, mail ->
-      %Swoosh.Attachment{filename: filename, content_type: content_type} = attachment
+      %Swoosh.Attachment{filename: filename, content_type: content_type, type: type} = attachment
+
+      if type == :inline do
+        Logger.warning(
+          "#{__MODULE__}: inline attachments are not supported, sending #{inspect(filename)} as a regular file"
+        )
+      end
+
       data = Swoosh.Attachment.get_content(attachment)
       Mail.put_attachment(mail, {filename, data}, headers: [content_type: content_type])
     end)
